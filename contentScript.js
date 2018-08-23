@@ -14,6 +14,8 @@ var cardValues = {
     "2": 12
 }
 
+var lastFoundElement = undefined;
+
 //Define the Card class
 class Card {
     constructor(name) {
@@ -29,8 +31,8 @@ class Deck {
         this.discardPile = [];
         
         for (var i = 0; i < 4; i++) {
-            for (var n = 0; n < 13; n++) {
-                var newCard = new Card(n);
+            for (var key in cardValues) {
+                var newCard = new Card(key);
                 this.cards.push(newCard);
             }
         }
@@ -134,20 +136,66 @@ async function waitForLoad(callback) {
     callback();
 }
 
-async function waitForCard(callback, side) {
+async function waitTime(callback, sleepTime) {
+    await sleep(sleepTime);
+    callback()
+}
+
+async function waitForElement(callback, selector, sleepTime, maxIterations) {
+    console.log("Waiting for element " + selector);
+    var found = false;
+    var iterations = 0;
+    sleepTime = sleepTime == undefined ? 2000 : sleepTime;
+    maxIterations = maxIterations == undefined ? 10 : maxIterations;
+    
+    while (found == false && iterations < maxIterations) {
+        if (document.querySelector(selector) != null) {
+            found = true;
+            break;
+        } else {
+            console.log("Sleeping");
+            iterations += 1;
+            await sleep(sleepTime);
+        }
+    }
+    
+    if (found == true) {
+        console.log("Element found!");
+        callback();
+    } else {
+        console.log("Element not found after " + maxIterations.toString() + " attempts");
+    }
+}
+
+async function waitForCard(callback, side, remove) {
+    var found = false;
+    var cardFound = undefined;
+    var findCallback = undefined;
+    remove = remove == undefined ? false : remove;
     if (side == 0) {
         //Look in the dealer position
-        while (findLeftCard() < 0) {
-            console.log("Waiting for the left side card to load");
-            await sleep(2000);    
-        }
+        console.log("Waiting for the left side card to load");
+        findCallback = findLeftCard;
     } 
     else {
         //Look in the right position
-        while (findRightCard() < 0) {
-            console.log("Waiting for the right side card to load");
-            await sleep(2000);    
+        console.log("Waiting for the right side card to load");
+        findCallback = findRightCard;
+    }
+    
+    while (!found) {
+        value = findCallback();
+        
+        if (value != -1) {
+            console.log("Card found: " + value);
+            found = true;
+            if (remove) {
+                //Remove the card from the deck
+                gameDeck.getCard(value);
+            }
         }
+        console.log("Sleeping");
+        await sleep(2000);    
     }
     
     callback();
@@ -160,23 +208,35 @@ function addListenerToElement(el, ev, callback) {
 
 function startGame() {
     gameDeck = new Deck();
-    waitForCard(readCards, 0);
+    waitTime(function() {
+        waitForCard(readCards, 0, true);
+    }, 1500);
+}
+
+function continueGame() {
+    waitTime(function() {
+        waitForCard(readCards, 0, true);
+    }, 1500);
 }
 
 function clickLower() {
-    waitForCard(readCards, 1);
+    waitTime(function() {
+        waitForCard(readCards, 1, true);
+    }, 1500);
 }
 
 function clickHigher() {
-    waitForCard(readCards, 1);
+    waitTime(function() {
+        waitForCard(readCards, 1, true);
+    }, 1500);
 }
 
-function findLeftCard() {
+function findLeftCard(updateLastFound) {
     console.log("Looking for Card 1");
     var dealerLeft = document.querySelector(".dealer-card.left");
     
     //Find the card amongst the children elements of the left position
-    var cardLeftElement = findCard(dealerLeft);
+    var cardLeftElement = findCard(dealerLeft, updateLastFound);
     
     var cardLeft = cardLeftElement.classList[0].replace("card-", "");
     var leftValue = cardLeft.split("-")[1];
@@ -201,29 +261,41 @@ function findRightCard() {
     }
 }
 
-function findCard(el) {
+function findCard(el, setLastFound) {
+    setLastFound = setLastFound == undefined ? false : setLastFound;
+    
+    if (setLastFound == false && lastFoundElement != undefined) {
+        return lastFoundElement;
+    }
+    
     var cardFace1 = el.querySelector(".face1");
     var cardFace2 = el.querySelector(".face2");
     //See what element has the revealed card
-    var suites=["diamonds", "clover" ,"spade", "heart"];
+    var suites=["diamonds", "clubs" ,"spades", "hearts"];
 
     var check1 = false;
     var i;
     for (i=0; i < suites.length; i++) {
-        if (cardFace1.classList.value.includes(suites[i])) {
+        if (cardFace1.classList.value.includes(suites[i]) && cardFace1 != lastFoundElement) {
             check1 = true;
             break;
         }
     }
     var check2 = false;
     for (var i=0;i<suites.length;i++){
-        if (cardFace2.classList.value.includes(suites[i])) {
+        if (cardFace2.classList.value.includes(suites[i]) && cardFace2 != lastFoundElement) {
             check2 = true;
             break;
         }
     }
     
-    return check1 == true ? cardFace1 : check2 == true ? cardFace2 : undefined;
+    var returnElement = check1 == true ? cardFace1 : check2 == true ? cardFace2 : undefined;
+    
+    if (setLastFound) {
+        lastFoundElement = returnElement;
+    }
+    
+    return returnElement;
 }
 
 function readCards() {
@@ -240,14 +312,11 @@ function readCards() {
         //Remove and Add an event listener to the Start button
         startButton.removeEventListener("click", startGame);
         addListenerToElement(startButton, "click", startGame);
+        return;
     } else if (inGame) {
-        console.log("Game is currently underway. Will attempt to use the default gameDeck");
-        continueButton.removeEventListener("click", function () {
-            waitForCard(readCards, 0);
-        });
-        addListenerToElement(continueButton, "click", function () {
-            waitForCard(readCards, 0);
-        });
+        console.log("Game is currently underway");
+        continueButton.removeEventListener("click", continueGame);
+        addListenerToElement(continueButton, "click", continueGame);
     } else {
         //Remove and add a click listener to the high and low button
         lowerButton.removeEventListener("click", clickLower);
@@ -271,7 +340,6 @@ function readCards() {
     var rightValue = findRightCard();
     if (rightValue >= 0) {
         console.log("Right is: " + rightValue);
-        gameDeck.getCard(rightValue);
     } else {
         console.log("Your card is not revealed yet!");
     }
@@ -299,4 +367,7 @@ function readCards() {
     console.log("  Discard Pile: " + gameDeck.discardPile.length.toString());
 }
 
-waitForLoad(readCards);
+//Wait for the game to be loaded and call readCards
+waitForLoad(function() {
+    waitForCard(readCards, 0, true);
+});
