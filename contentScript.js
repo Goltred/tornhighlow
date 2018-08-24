@@ -14,7 +14,11 @@ var cardValues = {
     "2": 12
 }
 
-var lastFoundElement = undefined;
+var lastFoundLeft = undefined;
+var lastFoundRight = undefined;
+
+//Element constants
+const startButtonSelector = ".action-btn-wrap.startGame";
 
 //Define the Card class
 class Card {
@@ -172,6 +176,7 @@ async function waitForCard(callback, side, remove) {
     var cardFound = undefined;
     var findCallback = undefined;
     remove = remove == undefined ? false : remove;
+    step = 0 //Right card should be hidden
     if (side == 0) {
         //Look in the dealer position
         console.log("Waiting for the left side card to load");
@@ -181,10 +186,11 @@ async function waitForCard(callback, side, remove) {
         //Look in the right position
         console.log("Waiting for the right side card to load");
         findCallback = findRightCard;
+        step = 1 //The right card should be there
     }
     
     while (!found) {
-        value = findCallback();
+        value = findCallback(remove);
         
         if (value != -1) {
             console.log("Card found: " + value);
@@ -193,12 +199,20 @@ async function waitForCard(callback, side, remove) {
                 //Remove the card from the deck
                 gameDeck.getCard(value);
             }
+        } else {
+            //Check if the start button is visible as it would mean
+            //that the game was lost
+            var startButton = document.querySelector(startButtonSelector);
+            if (buttonIsVisible(startButton)) {
+                //Exit since the start button is visible
+                break;
+            }
         }
         console.log("Sleeping");
         await sleep(2000);    
     }
     
-    callback();
+    callback(step);
 }
 
 function addListenerToElement(el, ev, callback) {
@@ -207,7 +221,6 @@ function addListenerToElement(el, ev, callback) {
 }
 
 function startGame() {
-    gameDeck = new Deck();
     waitTime(function() {
         waitForCard(readCards, 0, true);
     }, 1500);
@@ -236,20 +249,23 @@ function findLeftCard(updateLastFound) {
     var dealerLeft = document.querySelector(".dealer-card.left");
     
     //Find the card amongst the children elements of the left position
-    var cardLeftElement = findCard(dealerLeft, updateLastFound);
+    var cardLeftElement = findCard(dealerLeft, 0, updateLastFound);
     
-    var cardLeft = cardLeftElement.classList[0].replace("card-", "");
-    var leftValue = cardLeft.split("-")[1];
+    var leftValue = -1;
+    if (cardLeftElement != undefined) {
+        var cardLeft = cardLeftElement.classList[0].replace("card-", "");
+        var leftValue = cardLeft.split("-")[1];
+    }
     
     return leftValue;
 }
 
-function findRightCard() {
+function findRightCard(updateLastFound) {
     console.log("Looking for Card 2");
     var yourCardRight = document.querySelector(".you-card.left");
     
     //Find the card amongst the children elements of the right position
-    var cardRightElement = findCard(yourCardRight);
+    var cardRightElement = findCard(yourCardRight, 1, updateLastFound);
     
     if (cardRightElement != undefined) {
         var cardRight = cardRightElement.classList[0].replace("card-", "");
@@ -261,51 +277,77 @@ function findRightCard() {
     }
 }
 
-function findCard(el, setLastFound) {
+function getSuite(face, lastFoundElement) {
+    //See what element has the revealed card
+    var suites=["diamonds", "clubs" ,"spades", "hearts"];
+    
+    //Check first if the class contains "back"
+    if (face.classList.value.includes("back") && face != lastFoundElement) {
+        return false;
+    }
+        
+    for (i=0; i < suites.length; i++) {
+        if (face.classList.value.includes(suites[i]) && face != lastFoundElement) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+function findCard(el, side, setLastFound) {
     setLastFound = setLastFound == undefined ? false : setLastFound;
     
+    var lastFoundElement = side == 0 ? lastFoundLeft : undefined;
+        
     if (setLastFound == false && lastFoundElement != undefined) {
         return lastFoundElement;
     }
     
     var cardFace1 = el.querySelector(".face1");
     var cardFace2 = el.querySelector(".face2");
-    //See what element has the revealed card
-    var suites=["diamonds", "clubs" ,"spades", "hearts"];
-
-    var check1 = false;
-    var i;
-    for (i=0; i < suites.length; i++) {
-        if (cardFace1.classList.value.includes(suites[i]) && cardFace1 != lastFoundElement) {
-            check1 = true;
-            break;
-        }
-    }
-    var check2 = false;
-    for (var i=0;i<suites.length;i++){
-        if (cardFace2.classList.value.includes(suites[i]) && cardFace2 != lastFoundElement) {
-            check2 = true;
-            break;
-        }
-    }
+    
+    var check1 = getSuite(cardFace1, lastFoundElement);
+    var check2 = getSuite(cardFace2, lastFoundElement);
     
     var returnElement = check1 == true ? cardFace1 : check2 == true ? cardFace2 : undefined;
     
-    if (setLastFound) {
-        lastFoundElement = returnElement;
+    if (setLastFound && returnElement != undefined) {
+        if (side == 0) {
+            lastFoundLeft = returnElement;
+        }
+    } else {
+        //Clear the last found variables if the start button is present
+        var startButton = document.querySelector(startButtonSelector);
+        
+        if (buttonIsVisible(startButton)) {
+            lastFoundLeft = undefined;
+        }
     }
     
     return returnElement;
 }
 
-function readCards() {
-    var startButton = document.querySelector(".action-btn-wrap.startGame");
+function buttonIsVisible (buttonElement) {
+    return (buttonElement.clientHeight != 0 && buttonElement.clientHeight != 0);
+}
+
+function readCards(step) {
+    //Read the cards in the screen.
+    //Step specifies what card should be visible:
+    //   0: Only left
+    //   1: Both
+    
+    //default value for step
+    step = step == undefined ? 0 : step;
+    
+    var startButton = document.querySelector(startButtonSelector);
+    var continueButton = document.querySelector(".action-btn-wrap.continue");
     var lowerButton = document.querySelector(".action-btn-wrap.low");
     var higherButton = document.querySelector(".action-btn-wrap.high");
-    var continueButton = document.querySelector(".action-btn-wrap.continue");
     
-    var started = !(startButton != undefined && lowerButton.style.display != "inline-block" && higherButton.style.display != "inline-block");
-    var inGame = continueButton.style.display == "inline-block";
+    var started = !buttonIsVisible(startButton);
+    var inGame = buttonIsVisible(continueButton);
     if (!started && !inGame) {
         console.log("Game has not started");
         
@@ -337,9 +379,11 @@ function readCards() {
     gameDeck.calculateOdds(leftCard);
 
     //Look if there is a card in the right
-    var rightValue = findRightCard();
-    if (rightValue >= 0) {
-        console.log("Right is: " + rightValue);
+    if (step == 1) {
+        var rightValue = findRightCard();
+        if (rightValue >= 0) {
+            console.log("Right is: " + rightValue);
+        }
     } else {
         console.log("Your card is not revealed yet!");
     }
