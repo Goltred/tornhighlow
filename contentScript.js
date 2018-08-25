@@ -29,6 +29,7 @@ class Deck {
         this.cards = [];
         this.discardPile = [];
         
+        //Create the whole deck, 12 cards per suite
         for (var i = 0; i < suites.length; i++) {
             for (var key in cardValues) {
                 var newCard = new Card(key, suites[i]);
@@ -38,11 +39,17 @@ class Deck {
     }
     
     discard(card) {
+        //Place the given card in the discard pile
+        //and update the UI
+        
         this.discardPile.push(card);
         this.uiUpdateDiscard();
     }
     
     getCard(name, suite) {
+        //Get a given card from the deck based on the given
+        //name and suite. Adding it to the discard pile.
+        
         name = name.toUpperCase();
         for (var i = 0; i < this.cards.length; i++) {
             var card = this.cards[i];
@@ -57,6 +64,8 @@ class Deck {
     }
     
     uiUpdateDiscard() {
+        //Update the Discard Pile UI
+        
         var discardDiv = document.getElementById("tchlDiscard");
         if (discardDiv) {
             var str = "";
@@ -82,6 +91,7 @@ class Deck {
         //Return an array with cards of higher, lower or same
         //value as the provided card.
         //Diff should be 0, positive or a negative number
+        
         var result = []
 
         for (var i = 0; i < this.cards.length; i++) {
@@ -142,7 +152,7 @@ class Deck {
     }
 }
 
-//Constants
+//Globals
 var cardValues = {
     "A": 0,
     "K": 1,
