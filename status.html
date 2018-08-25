@@ -1,0 +1,39 @@
+<style>
+    .tchighlow {
+        position: relative;
+        float: right;
+    }
+    .tchighlow h3, .tchighlow h4 {
+        margin-top: .5em;
+    }
+    
+    .best {
+        color: green;
+        font-weight: bold;
+    }
+    
+    .low {
+        font-color: red;
+    }
+    
+    .tchlcard-24 {
+        height: 32px;
+        width: 24px;
+    }
+    
+</style>
+<div class="tchighlow">
+    <h3>Torn City High-Low Helper</h3>
+    <span>Game Status: </span><span id="tchlstatus"></span>
+    <div>
+        <div>Higher: <span id="tchlhigher"></span></div>
+        <div>Lower: <span id="tchllower"></span></div>
+        <div>Same Card: <span id="tchlsame"></span></div>
+        <div id="tchlsuggestion"></div>
+    </div>
+    <div>
+        <h4>Discard pile</h4>
+        <div id="tchlDiscard" class="discard">
+        </div>
+    </div>
+</div>

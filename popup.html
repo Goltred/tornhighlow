@@ -1,18 +1,18 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <style>
-      button {
-        height: 30px;
-        width: 30px;
-        outline: none;
-      }
-    </style>
+    <link rel="stylesheet" href="style.css">
   </head>
   <body>
-    <span>Message</span>
-    <span id="message">
-    </span>
-    <button id="changeColor"></button>
+    <h3>Torn City High-Low Helper</h3>
+    <span>Game Status: </span><span id="status"></span>
+    <div>
+        <div>Higher:<span id="higher"></span></div>
+        <div>Lower:<span id="lower"></span></div>
+        <div>Same Card:<span id="same"></span></div>
+        <div id="suggestion"></div>
+    </div>
+    <div class="discard">
+    </div>
   </body>
 </html>
