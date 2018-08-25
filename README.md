@@ -15,3 +15,17 @@ Bear in mind that this game has extremely high chances of being rigged, this
 prevents any kind of proper prediction to be accurate.
 
 The extension is only active on the High-Low game.
+
+## Timers
+
+Due to the way the casino games reveals cards and the elements used to display
+the components of the game, the extension has to make heavy us of timed
+functions in order to be able to accurately read the different elements on the
+screen.
+This might be avoidable by some other method that I don't currently know about,
+but for now it seemed to provide the most reliable and fluid way to work
+around the way Torn works.
+
+Because of this, it is recommended to *take it slower* when playing the game so
+that the reading of the components is not thrown off completely by fast
+clicking.
