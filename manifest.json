@@ -1,5 +1,5 @@
 {
-    "name": "Torn High-Low Card Counting",
+    "name": "TC Casino Helper - High-Low",
     "version": "1.0",
     "description": "Count cards while playing High-Low in Torn. Showing the best probability while playing a game in the casino",
     "manifest_version": 2,
