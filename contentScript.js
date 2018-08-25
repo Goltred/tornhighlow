@@ -524,6 +524,11 @@ statusElement.innerHTML = xmlHttp.responseText;
 var highLowWrap = document.querySelector(".highlow-main-wrap");
 highLowWrap.parentNode.insertBefore(statusElement, highLowWrap.nextSibling);
 
+//Add the icon
+var iconDiv = document.getElementById("tchllogo");
+var logoPath = chrome.runtime.getURL('images/icon48.png');
+iconDiv.innerHTML = '<img src="' + logoPath + '"></img>';
+
 //Wait for the game to be loaded and call readCards
 waitForLoad(function() {
     waitForCard(readCards, 0, true);

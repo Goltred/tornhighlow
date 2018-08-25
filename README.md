@@ -1,6 +1,6 @@
 # TC Casino Helper - High-Low
 
-This chrome extension introduced extra HTML elements into the High-Low casino
+This chrome extension introduces extra HTML elements into the High-Low casino
 game in Torn city. The extension presents the odds of getting a Higher, Lower
 or Same card as the dealer.
 
