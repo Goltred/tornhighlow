@@ -1,7 +1,7 @@
 {
     "name": "Torn Casino Helper - High-Low",
     "short_name": "TCH - High-Low",
-    "version": "1.0",
+    "version": "1.1",
     "description": "Count cards while playing High-Low in Torn. Showing the best probability while playing a game in the casino",
     "manifest_version": 2,
     "permissions": ["storage", "declarativeContent", "activeTab", "tabs"],

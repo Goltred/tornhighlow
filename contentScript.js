@@ -60,6 +60,11 @@ class Deck {
             }
         }
         
+        console.log("Found a card that should NOT be on the deck.");
+        console.log("There might be an issue with the logic");
+        console.log("Found a " + name + " of " + suite);
+        uiUpdateStatus("ERROR. Please check developer console");
+        
         return undefined;
     }
     
@@ -171,7 +176,7 @@ var cardValues = {
 
 var lastFoundLeft = undefined;
 var lastFoundRight = undefined;
-var debugPrint = true;
+var debugPrint = false;
 
 //Element constants
 const startButtonSelector = ".action-btn-wrap.startGame";
@@ -308,25 +313,29 @@ function addListenerToElement(el, ev, callback) {
     el.addEventListener(ev, callback);
 }
 
-function startGame() {
+function clickStart() {
+    uiUpdateStatus("Game currently running");
     waitTime(function() {
         waitForCard(readCards, 0, true);
     }, 800);
 }
 
-function continueGame() {
+function clickContinue() {
+    uiUpdateStatus("Game currently running");
     waitTime(function() {
         waitForCard(readCards, 0, true);
     }, 800);
 }
 
 function clickLower() {
+    uiUpdateStatus("Game currently running");
     waitTime(function() {
         waitForCard(readCards, 1, true);
     }, 800);
 }
 
 function clickHigher() {
+    uiUpdateStatus("Game currently running");
     waitTime(function() {
         waitForCard(readCards, 1, true);
     }, 800);
@@ -335,66 +344,39 @@ function clickHigher() {
 function findLeftCard(updateLastFound) {
     logger.log("Looking for Card 1");
     var dealerLeft = document.querySelector(".dealer-card.left");
+    var foundCard = findCardInElement(dealerLeft, 0, updateLastFound);
     
-    //Find the card amongst the children elements of the left position
-    var cardLeftElement = findCard(dealerLeft, 0, updateLastFound);
-    
-    var name = -1;
-    var suite = "";
-    if (cardLeftElement != undefined) {
-        var cardLeft = cardLeftElement.classList[0].replace("card-", "");
-        name = cardLeft.split("-")[1];
-        suite = cardLeft.split("-")[0];
-    }
-    
-    if (name != -1 ) {
-        var card = new Card(name, suite);
-        logger.log("Left is: " + card.name + " of " + card.suite);
-        return card;
-    } else {
-        return -1
-    }
+    logger.log("Left is: " + foundCard.name + " of " + foundCard.suite);
+    return foundCard;
 }
 
 function findRightCard(updateLastFound) {
     logger.log("Looking for Card 2");
     var yourCardRight = document.querySelector(".you-card.left");
+    var foundCard = findCardInElement(yourCardRight, 1, updateLastFound);
     
+    logger.log("Right is: " + foundCard.name + " of " + foundCard.suite);
+    return foundCard;
+}
+
+function findCardInElement(cardElement, side, updateLastFound) {
     //Find the card amongst the children elements of the right position
-    var cardRightElement = findCard(yourCardRight, 1, updateLastFound);
+    var foundCardEl = findCard(cardElement, side, updateLastFound);
     
     var name = -1;
     var suite = "";
-    if (cardRightElement != undefined) {
-        var cardRight = cardRightElement.classList[0].replace("card-", "");
-        name = cardRight.split("-")[1];
-        suite = cardRight.split("-")[0];
+    if (foundCardEl != undefined) {
+        var cardDetails = foundCardEl.classList[0].replace("card-", "");
+        name = cardDetails.split("-")[1];
+        suite = cardDetails.split("-")[0];
     }
     
     if (name != -1 ) {
         var card = new Card(name, suite);
-        logger.log("Right is: " + card.name + " of " + card.suite);
         return card
     } else {
         return -1
     }
-}
-
-function findSuite(face, lastFoundElement) {
-    //See what element has the revealed card
-    
-    //Check first if the class contains "back"
-    if (face.classList.value.includes("back") && face != lastFoundElement) {
-        return false;
-    }
-        
-    for (i=0; i < suites.length; i++) {
-        if (face.classList.value.includes(suites[i]) && face != lastFoundElement) {
-            return true;
-        }
-    }
-    
-    return false;
 }
 
 function findCard(el, side, setLastFound) {
@@ -430,6 +412,23 @@ function findCard(el, side, setLastFound) {
     return returnElement;
 }
 
+function findSuite(face, lastFoundElement) {
+    //See what element has the revealed card
+    
+    //Check first if the class contains "back"
+    if (face.classList.value.includes("back") && face != lastFoundElement) {
+        return false;
+    }
+        
+    for (i=0; i < suites.length; i++) {
+        if (face.classList.value.includes(suites[i]) && face != lastFoundElement) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
 function buttonIsVisible (buttonElement) {
     return (buttonElement.clientHeight != 0 && buttonElement.clientHeight != 0);
 }
@@ -456,18 +455,18 @@ function readCards(step) {
         uiUpdateChances(0, 0, 0);
         
         //Remove and Add an event listener to the Start button
-        startButton.removeEventListener("click", startGame);
-        addListenerToElement(startButton, "click", startGame);
+        startButton.removeEventListener("click", clickStart);
+        addListenerToElement(startButton, "click", clickStart);
         return;
     } else if (inGame) {
-        logger.log("Game is currently underway");
-        uiUpdateStatus("Game currently running");
+        logger.log("Game currently running");
+        //uiUpdateStatus("Game currently running");
         
-        continueButton.removeEventListener("click", continueGame);
-        addListenerToElement(continueButton, "click", continueGame);
+        continueButton.removeEventListener("click", clickContinue);
+        addListenerToElement(continueButton, "click", clickContinue);
     } else {
-        logger.log("Game is currently underway");
-        uiUpdateStatus("Game currently running");
+        logger.log("Game currently running");
+        //uiUpdateStatus("Game currently running");
         //Remove and add a click listener to the high and low button
         lowerButton.removeEventListener("click", clickLower);
         addListenerToElement(lowerButton, "click", clickLower);
@@ -495,16 +494,6 @@ function readCards(step) {
         logger.log("Deck has been shuffled!");
         gameDeck = new Deck();
         logger.log("Deck has been recreated")
-        
-        //Remove the current displayed cards from the new deck
-        var leftCard = findLeftCard();
-        gameDeck.getCard(leftCard.name, leftCard.suite);
-        
-        var rightCard = findRightCard();
-        
-        if (rightCard != -1) {
-            gameDeck.getCard(rightCard.name, rightCard.suite);
-        }
     }
     
     logger.log("Current deck has:");
